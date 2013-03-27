@@ -1,7 +1,7 @@
-/* $XTermId: scrollbar.c,v 1.194 2013/01/06 22:03:21 tom Exp $ */
+/* $XTermId: scrollbar.c,v 1.196 2013/02/26 23:36:05 tom Exp $ */
 
 /*
- * Copyright 2000-2011,2012 by Thomas E. Dickey
+ * Copyright 2000-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -697,10 +697,12 @@ AmountToScroll(Widget w, String * params, Cardinal nparams)
 static void
 AlternateScroll(Widget w, long amount)
 {
-    XtermWidget xw = (XtermWidget) w;
-    TScreen *screen = TScreenOf(xw);
+    XtermWidget xw;
+    TScreen *screen;
 
-    if (screen->alternateScroll && screen->whichBuf) {
+    if ((xw = getXtermWidget(w)) != 0 &&
+	(screen = TScreenOf(xw)) != 0 &&
+	screen->alternateScroll && screen->whichBuf) {
 	ANSI reply;
 
 	amount /= FontHeight(screen);
@@ -709,10 +711,10 @@ AlternateScroll(Widget w, long amount)
 			? ANSI_SS3
 			: ANSI_CSI);
 	if (amount > 0) {
-	    reply.a_final = 'A';
+	    reply.a_final = 'B';
 	} else {
 	    amount = -amount;
-	    reply.a_final = 'B';
+	    reply.a_final = 'A';
 	}
 	while (amount-- > 0) {
 	    unparseseq(xw, &reply);

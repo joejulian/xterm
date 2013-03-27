@@ -1,7 +1,7 @@
-/* $XTermId: charproc.c,v 1.1280 2013/01/08 01:37:28 tom Exp $ */
+/* $XTermId: charproc.c,v 1.1283 2013/02/05 01:47:58 tom Exp $ */
 
 /*
- * Copyright 1999-2011,2012 by Thomas E. Dickey
+ * Copyright 1999-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -4352,7 +4352,7 @@ in_put(XtermWidget xw)
 #endif
 	}
 	if (need_cleanup)
-	    Cleanup(0);
+	    NormalExit();
 #if OPT_DOUBLE_BUFFER
 	if (screen->needSwap) {
 	    XdbeSwapInfo swap;
@@ -7029,7 +7029,7 @@ set_flags_from_list(char *target,
     Cardinal n;
     int value = -1;
 
-    while (*source != '\0') {
+    while (!IsEmpty(source)) {
 	char *next = ParseList(&source);
 	Boolean found = False;
 
@@ -7261,7 +7261,7 @@ VTInitialize(Widget wrequest,
     TRACE(("   Actual  foreground 0x%06lx\n", wnew->old_foreground));
     TRACE(("   Actual  background 0x%06lx\n", wnew->old_background));
 
-    TScreenOf(wnew)->mouse_button = -1;
+    TScreenOf(wnew)->mouse_button = 0;
     TScreenOf(wnew)->mouse_row = -1;
     TScreenOf(wnew)->mouse_col = -1;
 

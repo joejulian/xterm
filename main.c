@@ -1,4 +1,4 @@
-/* $XTermId: main.c,v 1.714 2013/01/01 13:32:39 tom Exp $ */
+/* $XTermId: main.c,v 1.716 2013/02/03 23:10:05 tom Exp $ */
 
 /*
  * Copyright 2002-2012,2013 by Thomas E. Dickey
@@ -2000,7 +2000,9 @@ main(int argc, char *argv[]ENVP_ARG)
 
 	for (n = 1; n < argc; n++) {
 	    if ((option_ptr = parseArg(&n, argv, &option_value)) == 0) {
-		if (isOption(argv[n])) {
+		if (argv[n] == 0) {
+		    break;
+		} else if (isOption(argv[n])) {
 		    Syntax(argv[n]);
 		} else if (explicit_shname != 0) {
 		    xtermWarning("Explicit shell already was %s\n", explicit_shname);
@@ -4517,7 +4519,6 @@ spawnXTerm(XtermWidget xw)
 		}
 	    } else {
 		xtermSetenv("SHELL", explicit_shname);
-		free(explicit_shname);
 	    }
 	    if (access(shell_path, X_OK) != 0) {
 		xtermPerror("Cannot use '%s' as shell", shell_path);
@@ -4767,8 +4768,9 @@ Exit(int n)
     struct UTMP_STR *utptr;
 
     /* don't do this more than once */
-    if (xterm_exiting)
-	return;
+    if (xterm_exiting) {
+	exit(n);
+    }
     xterm_exiting = True;
 
 #ifdef PUCC_PTYD

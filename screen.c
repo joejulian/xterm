@@ -1,7 +1,7 @@
-/* $XTermId: screen.c,v 1.473 2013/01/08 23:42:52 tom Exp $ */
+/* $XTermId: screen.c,v 1.475 2013/02/13 00:42:30 tom Exp $ */
 
 /*
- * Copyright 1999-2011,2012 by Thomas E. Dickey
+ * Copyright 1999-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -328,7 +328,8 @@ allocScrnData(TScreen * screen, unsigned nrow, unsigned ncol)
 
     AlignValue(ncol);
     length = ((nrow + 1) * sizeofScrnRow(screen, ncol));
-    if ((result = (Char *) calloc(length, sizeof(Char))) == 0)
+    if (length == 0
+	|| (result = (Char *) calloc(length, sizeof(Char))) == 0)
 	SysError(ERROR_SCALLOC2);
 
     TRACE(("allocScrnData %ux%u -> %lu -> %p..%p\n",
@@ -446,10 +447,6 @@ Reallocate(XtermWidget xw,
 	return 0;
     }
 
-    if (screen->widestLine < ncol)
-	screen->widestLine = (Dimension) ncol;
-    ncol = screen->widestLine;
-
     oldBufData = *sbufaddr;
 
     TRACE(("Reallocate %dx%d -> %dx%d\n", oldrow, MaxCols(screen), nrow, ncol));
@@ -548,10 +545,6 @@ ReallocateBufOffsets(XtermWidget xw,
 
     assert(nrow != 0);
     assert(ncol != 0);
-
-    if (screen->widestLine < ncol)
-	screen->widestLine = (Dimension) ncol;
-    ncol = screen->widestLine;
 
     oldBufData = *sbufaddr;
     oldBufHead = *sbuf;

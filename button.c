@@ -1,7 +1,7 @@
-/* $XTermId: button.c,v 1.446 2013/01/08 09:34:42 tom Exp $ */
+/* $XTermId: button.c,v 1.451 2013/02/06 09:56:15 tom Exp $ */
 
 /*
- * Copyright 1999-2011,2012 by Thomas E. Dickey
+ * Copyright 1999-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -1320,10 +1320,11 @@ xtermUtf8ToTextList(XtermWidget xw,
 	    for (i = 0; i < (*text_list_count); ++i) {
 		data = (Char *) (*text_list)[i];
 		size = strlen((*text_list)[i]) + 1;
-		data = UTF8toLatin1(screen, data, size, &size);
-		memcpy(tmp, data, size + 1);
-		new_text_list[i] = tmp;
-		tmp += size + 1;
+		if ((data = UTF8toLatin1(screen, data, size, &size)) != 0) {
+		    memcpy(tmp, data, size + 1);
+		    new_text_list[i] = tmp;
+		    tmp += size + 1;
+		}
 	    }
 	    XFreeStringList((*text_list));
 	    *text_list = new_text_list;
@@ -4188,15 +4189,21 @@ BtnCode(XButtonEvent * event, int button)
 {
     int result = (int) (32 + (KeyState(event->state) << 2));
 
+    if (event->type == MotionNotify)
+	result += 32;
+
     if (button < 0 || button > 5) {
 	result += 3;
     } else {
 	if (button > 3)
 	    result += (64 - 4);
-	if (event->type == MotionNotify)
-	    result += 32;
 	result += button;
     }
+    TRACE(("BtnCode button %d, %s state " FMT_MODIFIER_NAMES " ->%#x\n",
+	   button,
+	   visibleEventType(event->type),
+	   ARG_MODIFIER_NAMES(event->state),
+	   result));
     return result;
 }
 
@@ -4236,6 +4243,22 @@ EmitButtonCode(TScreen * screen,
     }
     return count;
 }
+
+static int
+FirstBitN(int bits)
+{
+    int result = -1;
+    if (bits > 0) {
+	result = 0;
+	while (!(bits & 1)) {
+	    bits /= 2;
+	    ++result;
+	}
+    }
+    return result;
+}
+
+#define ButtonBit(button) ((button >= 0) ? (1 << (button)) : 0)
 
 #define EMIT_BUTTON(button) EmitButtonCode(screen, line, count, event, button)
 
@@ -4313,7 +4336,7 @@ EditorButton(XtermWidget xw, XButtonEvent * event)
 	/* Button-Motion events */
 	switch (event->type) {
 	case ButtonPress:
-	    screen->mouse_button = button;
+	    screen->mouse_button |= ButtonBit(button);
 	    count = EMIT_BUTTON(button);
 	    break;
 	case ButtonRelease:
@@ -4323,6 +4346,7 @@ EditorButton(XtermWidget xw, XButtonEvent * event)
 	     * release for buttons 1..3 to a -1, which will be later mapped
 	     * into a "0" (some button was released).
 	     */
+	    screen->mouse_button &= ~ButtonBit(button);
 	    if (button < 3) {
 		switch (screen->extend_coords) {
 		case SET_SGR_EXT_MODE_MOUSE:
@@ -4333,7 +4357,6 @@ EditorButton(XtermWidget xw, XButtonEvent * event)
 		    break;
 		}
 	    }
-	    screen->mouse_button = button;
 	    count = EMIT_BUTTON(button);
 	    break;
 	case MotionNotify:
@@ -4344,7 +4367,7 @@ EditorButton(XtermWidget xw, XButtonEvent * event)
 		&& (col == screen->mouse_col)) {
 		changed = False;
 	    } else {
-		count = EMIT_BUTTON(screen->mouse_button);
+		count = EMIT_BUTTON(FirstBitN(screen->mouse_button));
 	    }
 	    break;
 	default:
@@ -4815,9 +4838,11 @@ expandFormat(XtermWidget xw,
 static void
 executeCommand(char **argv)
 {
-    if (fork() == 0) {
-	execvp(argv[0], argv);
-	exit(EXIT_FAILURE);
+    if (argv != 0 && argv[0] != 0) {
+	if (fork() == 0) {
+	    execvp(argv[0], argv);
+	    exit(EXIT_FAILURE);
+	}
     }
 }
 
@@ -4957,8 +4982,8 @@ HandleInsertSelectable(Widget w,
 		    free(exps);
 		}
 		free(data);
-		free(temp);
 	    }
+	    free(temp);
 	}
     }
 }
