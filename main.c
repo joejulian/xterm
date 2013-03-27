@@ -4991,6 +4991,7 @@ resize_termcap(XtermWidget xw)
  * doesn't support non-blocking wait, do nothing.
  * Returns the pid of the child, or 0 or -1 if none or error.
  */
+
 int
 nonblocking_wait(void)
 {
@@ -5011,7 +5012,7 @@ nonblocking_wait(void)
 
     pid = wait3(&status, WNOHANG, (struct rusage *) NULL);
 #endif /* USE_POSIX_WAIT else */
-    return pid;
+    return (int) pid;
 }
 
 #ifndef VMS
@@ -5022,8 +5023,6 @@ reapchild(int n GCC_UNUSED)
 {
     int olderrno = errno;
     int pid;
-
-    pid = wait(NULL);
 
 #ifdef USE_SYSV_SIGNALS
     /* cannot re-enable signal before waiting for child
